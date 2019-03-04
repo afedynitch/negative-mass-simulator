@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 """init.py: Functions for initialising various simulations."""
 
 import os
@@ -32,9 +31,9 @@ def initialise_halo_params():
     epsilon = 0.07
     limit = 80000
     radius = 4
-    num_pos_particles = 5000
-    num_neg_particles = 45000
-    chunks_value = (num_pos_particles+num_neg_particles)/5.0
+    num_pos_particles = 500
+    num_neg_particles = 4500
+    chunks_value = (num_pos_particles + num_neg_particles) / 5.0
     time_steps = 1000
     return G, epsilon, limit, radius, num_pos_particles, num_neg_particles, chunks_value, time_steps
 
@@ -73,7 +72,8 @@ def hernquist_ppf(r, a_scale=1.0):
     Returns:
     ppf: basic Hernquist ppf.
     """
-    ppf = (a_scale-(a_scale*r)+np.sqrt(a_scale**2 - (r*(a_scale**2))))/r
+    ppf = (a_scale - (a_scale * r) + np.sqrt(a_scale**2 -
+                                             (r * (a_scale**2)))) / r
     return ppf
 
 
@@ -89,11 +89,13 @@ def hernquist_vcirc(r, a_scale=1.0, m=1.0, G=1.0):
     Returns:
     v_circ: basic Hernquist circular orbital velocity.
     """
-    v_circ = (np.sqrt(G*m*r*((r+a_scale)**(-2))))
+    v_circ = (np.sqrt(G * m * r * ((r + a_scale)**(-2))))
     return v_circ
 
 
-def particle_halo_init(G, num_pos_particles, num_neg_particles, num_tot_particles, limit, m_pos, m_neg, a_scale, gauss_vel_comp, cube_neg_width):
+def particle_halo_init(G, num_pos_particles, num_neg_particles,
+                       num_tot_particles, limit, m_pos, m_neg, a_scale,
+                       gauss_vel_comp, cube_neg_width):
     """Initialise the positions, velocities, and masses of all particles for a forming Dark matter halo simulation.
     
     Args:
@@ -115,40 +117,53 @@ def particle_halo_init(G, num_pos_particles, num_neg_particles, num_tot_particle
     """
     # Set all the masses:
     if num_pos_particles > 0:
-        mass_pos = np.random.uniform(m_pos/num_pos_particles, m_pos/num_pos_particles, num_pos_particles)
+        mass_pos = np.random.uniform(m_pos / num_pos_particles,
+                                     m_pos / num_pos_particles,
+                                     num_pos_particles)
     else:
         mass_pos = np.array([])
     if num_neg_particles > 0:
-        mass_neg = np.random.uniform(m_neg/num_neg_particles, m_neg/num_neg_particles, num_neg_particles)
+        mass_neg = np.random.uniform(m_neg / num_neg_particles,
+                                     m_neg / num_neg_particles,
+                                     num_neg_particles)
     else:
         mass_neg = np.array([])
     mass = np.concatenate((mass_pos, mass_neg), axis=0)
     if len(mass) == 0:
         print("ERROR: No particles included in the simulation.")
     # Initially set all velocities to zero:
-    velocity = 0.0*np.random.randn(num_tot_particles, 3)
+    velocity = 0.0 * np.random.randn(num_tot_particles, 3)
     # For the positive masses (distributed as a central Hernquist galaxy):
     # Generate an array of random positions in spherical coordinates:
     r = hernquist_ppf(np.random.uniform(0, 1, num_pos_particles), a_scale)
-    phi = np.random.uniform(0, 2*np.pi, num_pos_particles)
+    phi = np.random.uniform(0, 2 * np.pi, num_pos_particles)
     theta = np.arccos(np.random.uniform(-1, 1, num_pos_particles))
     # Convert to cartesian coordinates (located at the centre of the simulation):
-    x = r*np.sin(theta)*np.cos(phi) + limit/2.0
-    y = r*np.sin(theta)*np.sin(phi) + limit/2.0
-    z = r*np.cos(theta) + limit/2.0
+    x = r * np.sin(theta) * np.cos(phi) + limit / 2.0
+    y = r * np.sin(theta) * np.sin(phi) + limit / 2.0
+    z = r * np.cos(theta) + limit / 2.0
     # Generate phi and theta a second time (otherwise all velocities will be
     # radial, with no tangential component):
-    phi_v = np.random.uniform(0, 2*np.pi, num_pos_particles)
+    phi_v = np.random.uniform(0, 2 * np.pi, num_pos_particles)
     theta_v = np.arccos(np.random.uniform(-1, 1, num_pos_particles))
     for i in range(num_pos_particles):
         vel_0 = hernquist_vcirc(r, a_scale, mass[0:num_pos_particles], G)
-        velocity[i][0] = vel_0[i]*np.sin(theta_v[i])*np.cos(phi_v[i])+np.random.normal(0.0, gauss_vel_comp, 1)
-        velocity[i][1] = vel_0[i]*np.sin(theta_v[i])*np.sin(phi_v[i])+np.random.normal(0.0, gauss_vel_comp, 1)
-        velocity[i][2] = vel_0[i]*np.cos(theta_v[i])+np.random.normal(0.0, gauss_vel_comp, 1)
+        velocity[i][0] = vel_0[i] * np.sin(theta_v[i]) * np.cos(
+            phi_v[i]) + np.random.normal(0.0, gauss_vel_comp, 1)
+        velocity[i][1] = vel_0[i] * np.sin(theta_v[i]) * np.sin(
+            phi_v[i]) + np.random.normal(0.0, gauss_vel_comp, 1)
+        velocity[i][2] = vel_0[i] * np.cos(theta_v[i]) + np.random.normal(
+            0.0, gauss_vel_comp, 1)
     # For the negative masses (distributed as a uniformly distributed cube):
-    x_neg = np.random.uniform((limit/2.0)-(cube_neg_width/2.0), (limit/2.0)+(cube_neg_width/2.0), num_neg_particles)
-    y_neg = np.random.uniform((limit/2.0)-(cube_neg_width/2.0), (limit/2.0)+(cube_neg_width/2.0), num_neg_particles)
-    z_neg = np.random.uniform((limit/2.0)-(cube_neg_width/2.0), (limit/2.0)+(cube_neg_width/2.0), num_neg_particles)
+    x_neg = np.random.uniform((limit / 2.0) - (cube_neg_width / 2.0),
+                              (limit / 2.0) + (cube_neg_width / 2.0),
+                              num_neg_particles)
+    y_neg = np.random.uniform((limit / 2.0) - (cube_neg_width / 2.0),
+                              (limit / 2.0) + (cube_neg_width / 2.0),
+                              num_neg_particles)
+    z_neg = np.random.uniform((limit / 2.0) - (cube_neg_width / 2.0),
+                              (limit / 2.0) + (cube_neg_width / 2.0),
+                              num_neg_particles)
     # Combine the positive and negative masses together:
     x = np.concatenate((x, x_neg), axis=0)
     y = np.concatenate((y, y_neg), axis=0)
@@ -184,7 +199,7 @@ def initialise_structure_params():
     radius = 4
     num_pos_particles = 25000
     num_neg_particles = 25000
-    chunks_value = (num_pos_particles+num_neg_particles)/5.0
+    chunks_value = (num_pos_particles + num_neg_particles) / 5.0
     time_steps = 1000
     return G, epsilon, limit, radius, num_pos_particles, num_neg_particles, chunks_value, time_steps
 
@@ -210,7 +225,9 @@ def initialise_structure_sim():
     return M_pos, M_neg, cube_pos_width, cube_neg_width, sim_name
 
 
-def particle_structure_init(G, num_pos_particles, num_neg_particles, num_tot_particles, limit, m_pos, m_neg, cube_pos_width, cube_neg_width):
+def particle_structure_init(G, num_pos_particles, num_neg_particles,
+                            num_tot_particles, limit, m_pos, m_neg,
+                            cube_pos_width, cube_neg_width):
     """Initialise the positions, velocities, and masses of all particles for a structure formation simulation.
     
     Args:
@@ -231,26 +248,42 @@ def particle_structure_init(G, num_pos_particles, num_neg_particles, num_tot_par
     """
     # Set all the masses:
     if num_pos_particles > 0:
-        mass_pos = np.random.uniform(m_pos/num_pos_particles, m_pos/num_pos_particles, num_pos_particles)
+        mass_pos = np.random.uniform(m_pos / num_pos_particles,
+                                     m_pos / num_pos_particles,
+                                     num_pos_particles)
     else:
         mass_pos = np.array([])
     if num_neg_particles > 0:
-        mass_neg = np.random.uniform(m_neg/num_neg_particles, m_neg/num_neg_particles, num_neg_particles)
+        mass_neg = np.random.uniform(m_neg / num_neg_particles,
+                                     m_neg / num_neg_particles,
+                                     num_neg_particles)
     else:
         mass_neg = np.array([])
     mass = np.concatenate((mass_pos, mass_neg), axis=0)
     if len(mass) == 0:
         print("ERROR: No particles included in the simulation.")
     # Initially set all velocities to zero:
-    velocity = 0.0*np.random.randn(num_tot_particles, 3)
+    velocity = 0.0 * np.random.randn(num_tot_particles, 3)
     # For the positive masses (distributed as a uniformly distributed cube):
-    x = np.random.uniform((limit/2.0)-(cube_pos_width/2.0), (limit/2.0)+(cube_pos_width/2.0), num_pos_particles)
-    y = np.random.uniform((limit/2.0)-(cube_pos_width/2.0), (limit/2.0)+(cube_pos_width/2.0), num_pos_particles)
-    z = np.random.uniform((limit/2.0)-(cube_pos_width/2.0), (limit/2.0)+(cube_pos_width/2.0), num_pos_particles)
+    x = np.random.uniform((limit / 2.0) - (cube_pos_width / 2.0),
+                          (limit / 2.0) + (cube_pos_width / 2.0),
+                          num_pos_particles)
+    y = np.random.uniform((limit / 2.0) - (cube_pos_width / 2.0),
+                          (limit / 2.0) + (cube_pos_width / 2.0),
+                          num_pos_particles)
+    z = np.random.uniform((limit / 2.0) - (cube_pos_width / 2.0),
+                          (limit / 2.0) + (cube_pos_width / 2.0),
+                          num_pos_particles)
     # For the negative masses (distributed as a uniformly distributed cube):
-    x_neg = np.random.uniform((limit/2.0)-(cube_neg_width/2.0), (limit/2.0)+(cube_neg_width/2.0), num_neg_particles)
-    y_neg = np.random.uniform((limit/2.0)-(cube_neg_width/2.0), (limit/2.0)+(cube_neg_width/2.0), num_neg_particles)
-    z_neg = np.random.uniform((limit/2.0)-(cube_neg_width/2.0), (limit/2.0)+(cube_neg_width/2.0), num_neg_particles)
+    x_neg = np.random.uniform((limit / 2.0) - (cube_neg_width / 2.0),
+                              (limit / 2.0) + (cube_neg_width / 2.0),
+                              num_neg_particles)
+    y_neg = np.random.uniform((limit / 2.0) - (cube_neg_width / 2.0),
+                              (limit / 2.0) + (cube_neg_width / 2.0),
+                              num_neg_particles)
+    z_neg = np.random.uniform((limit / 2.0) - (cube_neg_width / 2.0),
+                              (limit / 2.0) + (cube_neg_width / 2.0),
+                              num_neg_particles)
     # Combine the positive and negative masses together:
     x = np.concatenate((x, x_neg), axis=0)
     y = np.concatenate((y, y_neg), axis=0)
@@ -273,29 +306,37 @@ def init_dm_halo():
     None
     """
     print("Initialising Dark matter halo formation simulation...")
-    
+
     # Clean up any files from previous runs:
     if os.path.isdir('DATA') is False:
         os.system('mkdir DATA')
     os.system('rm -rf ./DATA/*.hdf5')
 
     # Initialise the basic parameters to use:
-    G, epsilon, limit, radius, num_pos_particles, num_neg_particles, chunks_value, time_steps = initialise_halo_params()
-    num_tot_particles = num_pos_particles+num_neg_particles
-    
+    G, epsilon, limit, radius, num_pos_particles, num_neg_particles, chunks_value, time_steps = initialise_halo_params(
+    )
+    num_tot_particles = num_pos_particles + num_neg_particles
+
     # Initialise the specific parameters to use for the simulation:
-    m_pos, m_neg, a_scale, gauss_vel_comp, cube_neg_width, sim_name = initialise_halo_sim()
-    
+    m_pos, m_neg, a_scale, gauss_vel_comp, cube_neg_width, sim_name = initialise_halo_sim(
+    )
+
     # Initialise particle positions, velocities, and masses:
-    position, velocity, mass = particle_halo_init(G, num_pos_particles, num_neg_particles, num_tot_particles, limit, m_pos, m_neg, a_scale, gauss_vel_comp, cube_neg_width)
-    
+    position, velocity, mass = particle_halo_init(
+        G, num_pos_particles, num_neg_particles, num_tot_particles, limit,
+        m_pos, m_neg, a_scale, gauss_vel_comp, cube_neg_width)
+
     # Save the data to hdf5 format and the parameters to a .txt file:
     print("Saving initial conditions to disk...")
     save_data(position, './DATA/position0.hdf5', chunks_value)
     save_data(velocity, './DATA/velocity0.hdf5', chunks_value)
     save_data(mass, './DATA/mass.hdf5', chunks_value)
-    
-    np.savetxt('./DATA/params.txt', np.column_stack([G, epsilon, chunks_value, limit, radius, time_steps, sim_name]), fmt="%s")
+
+    np.savetxt(
+        './DATA/params.txt',
+        np.column_stack(
+            [G, epsilon, chunks_value, limit, radius, time_steps, sim_name]),
+        fmt="%s")
 
     return
 
@@ -310,28 +351,36 @@ def init_structure_formation():
     None
     """
     print("Initialising structure formation simulation...")
-    
+
     # Clean up any files from previous runs:
     if os.path.isdir('DATA') is False:
         os.system('mkdir DATA')
     os.system('rm -rf ./DATA/*.hdf5')
 
     # Initialise the basic parameters to use:
-    G, epsilon, limit, radius, num_pos_particles, num_neg_particles, chunks_value, time_steps = initialise_structure_params()
-    num_tot_particles = num_pos_particles+num_neg_particles
-    
+    G, epsilon, limit, radius, num_pos_particles, num_neg_particles, chunks_value, time_steps = initialise_structure_params(
+    )
+    num_tot_particles = num_pos_particles + num_neg_particles
+
     # Initialise the specific parameters to use for the simulation:
-    m_pos, m_neg, cube_pos_width, cube_neg_width, sim_name = initialise_structure_sim()
-    
+    m_pos, m_neg, cube_pos_width, cube_neg_width, sim_name = initialise_structure_sim(
+    )
+
     # Initialise particle positions, velocities, and masses:
-    position, velocity, mass = particle_structure_init(G, num_pos_particles, num_neg_particles, num_tot_particles, limit, m_pos, m_neg, cube_pos_width, cube_neg_width)
-    
+    position, velocity, mass = particle_structure_init(
+        G, num_pos_particles, num_neg_particles, num_tot_particles, limit,
+        m_pos, m_neg, cube_pos_width, cube_neg_width)
+
     # Save the data to hdf5 format and the parameters to a .txt file:
     print("Saving initial conditions to disk...")
     save_data(position, './DATA/position0.hdf5', chunks_value)
     save_data(velocity, './DATA/velocity0.hdf5', chunks_value)
     save_data(mass, './DATA/mass.hdf5', chunks_value)
-    
-    np.savetxt('./DATA/params.txt', np.column_stack([G, epsilon, chunks_value, limit, radius, time_steps, sim_name]), fmt="%s")
-    
+
+    np.savetxt(
+        './DATA/params.txt',
+        np.column_stack(
+            [G, epsilon, chunks_value, limit, radius, time_steps, sim_name]),
+        fmt="%s")
+
     return

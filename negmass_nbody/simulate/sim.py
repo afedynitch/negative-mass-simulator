@@ -1,6 +1,7 @@
 #!/usr/bin/env python
-
 """sim.py: Functions for running the N-body code."""
+
+from __future__ import print_function
 
 import os
 import time as t
@@ -25,7 +26,10 @@ def find_existing():
     index: the number of the highest iteration.
     """
     listing = os.listdir('./DATA/')
-    filtered_list = [listing[i].split('.hdf5')[0].split('velocity') for i in range(len(listing))]
+    filtered_list = [
+        listing[i].split('.hdf5')[0].split('velocity')
+        for i in range(len(listing))
+    ]
     index = []
     for i in range(len(filtered_list)):
         if len(filtered_list[i]) == 2:
@@ -78,10 +82,10 @@ def update_velocities(position, velocity, mass, G, epsilon):
     dz = da.subtract.outer(position[:, 2], position[:, 2])
     r2 = da.square(dx) + da.square(dy) + da.square(dz) + da.square(epsilon)
     #
-    coef = -G*mass[:]
-    ax = coef*dx
-    ay = coef*dy
-    az = coef*dz
+    coef = -G * mass[:]
+    ax = coef * dx
+    ay = coef * dy
+    az = coef * dz
     #
     ax_scaled = da.divide(ax, r2)
     ay_scaled = da.divide(ay, r2)
@@ -95,7 +99,8 @@ def update_velocities(position, velocity, mass, G, epsilon):
     velocity_y = da.diag(da.add.outer(da.transpose(velocity)[1], total_ay))
     velocity_z = da.diag(da.add.outer(da.transpose(velocity)[2], total_az))
     #
-    velocity = np.column_stack((velocity_x.compute(), velocity_y.compute(), velocity_z.compute()))
+    velocity = np.column_stack((velocity_x.compute(), velocity_y.compute(),
+                                velocity_z.compute()))
     return velocity
 
 
@@ -144,40 +149,45 @@ def run_nbody():
     None
     """
     # Load the parameters for the simulation:
-    G, epsilon, chunks_value, limit, radius, time_steps = np.genfromtxt('./DATA/params.txt', dtype=float, usecols=[0, 1, 2, 3, 4, 5])
+    G, epsilon, chunks_value, limit, radius, time_steps = np.genfromtxt(
+        './DATA/params.txt', dtype=float, usecols=[0, 1, 2, 3, 4, 5])
     sim_name = np.genfromtxt('./DATA/params.txt', dtype=str, usecols=[6])
-    
+
     # Find the highest numbered HDF5 file:
     index = find_existing()
-    print("Beginning N-body simulation. Iteration:", index, "of", int(time_steps))
-    
-    time_steps = time_steps-index
-    
+    print("Beginning N-body simulation. Iteration:", index, "of",
+          int(time_steps))
+
+    time_steps = time_steps - index
+
     while time_steps > 0:
         # Load the data as dask arrays:
         position, velocity, mass = load_as_dask_array(index, chunks_value)
-        
+
         # Start the N-body iteration:
         start = t.time()
-        
+
         # Update the particle velocities:
         velocity = update_velocities(position, velocity, mass, G, epsilon)
-        
+
         # Update the particle positions:
         position = position.compute()
         position += velocity
-        
+
         # End the iteration:
         end = t.time()
-        print("Iteration", index, "complete:", (end-start)/60.0, "mins.")
-        
+        print("Iteration", index, "complete:", (end - start) / 60.0, "mins.")
+
         # Apply various boundary conditions:
-        position, velocity = apply_boundary_conditions(position, velocity, limit, radius)
-        
+        position, velocity = apply_boundary_conditions(position, velocity,
+                                                       limit, radius)
+
         # Save the data:
-        save_data(position, './DATA/position' + str(index+1) + '.hdf5', chunks_value)
-        save_data(velocity, './DATA/velocity' + str(index+1) + '.hdf5', chunks_value)
-        index = index+1
-        time_steps = time_steps-1
-    
+        save_data(position, './DATA/position' + str(index + 1) + '.hdf5',
+                  chunks_value)
+        save_data(velocity, './DATA/velocity' + str(index + 1) + '.hdf5',
+                  chunks_value)
+        index = index + 1
+        time_steps = time_steps - 1
+
     return

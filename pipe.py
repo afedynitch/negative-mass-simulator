@@ -8,7 +8,7 @@ from negmass_nbody.initialise.init import init_dm_halo, init_structure_formation
 from negmass_nbody.simulate.sim import run_nbody
 from negmass_nbody.visualise.vis import make_images, make_videos
 
-__author__ = "Jamie Farnes"
+__author__ = "Jamie Farnes" 
 __email__ = "jamie.farnes@oerc.ox.ac.uk"
 
 
